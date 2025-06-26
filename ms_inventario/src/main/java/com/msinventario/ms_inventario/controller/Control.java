@@ -42,8 +42,8 @@ public class Control {
     }
 
     @GetMapping("/obtener")
-    public List<Producto> obtenerProductos() {
-        return inventarioService.obtenerTodos();
+    public ResponseEntity<List<Producto>> obtenerProductos() {
+        return ResponseEntity.ok().body(inventarioService.obtenerTodos());
     }
     
 
