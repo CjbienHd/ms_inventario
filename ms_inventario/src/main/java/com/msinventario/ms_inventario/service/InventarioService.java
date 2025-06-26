@@ -13,7 +13,6 @@ import com.msinventario.ms_inventario.repository.RepositoryInventario;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 
@@ -40,65 +39,65 @@ public class InventarioService {
 
 
     /** Actualiza la cantidad de un producto */
-    public ResponseEntity<Producto> actualizarCantidad(Long id, ActualizarCantidadDTO dto) {
+    public Producto actualizarCantidad(Long id, ActualizarCantidadDTO dto) {
         Optional<Producto> productoOpt = inventarioRepo.findById(id);
         if (productoOpt.isPresent()){
             Producto producto = productoOpt.get();
             producto.setCantidad(dto.getCantidad());
             inventarioRepo.save(producto);
-            return ResponseEntity.ok(producto);
+            return producto;
 
         }
         else{
-            return ResponseEntity.notFound().build();
+            return new Producto();
         }
     }
 
     /** Permite actualizar el precio de un producto */
-    public ResponseEntity<Producto> actualizarPrecio(Long id, ActualizarPrecioDTO preciodto) {
+    public Producto actualizarPrecio(Long id, ActualizarPrecioDTO preciodto) {
 
         Optional<Producto> productoOpt = inventarioRepo.findById(id);
         if (productoOpt.isPresent()){
             Producto producto = productoOpt.get();
             producto.setPrecio(preciodto.getPrecio());
             inventarioRepo.save(producto);
-            return ResponseEntity.ok(producto);
+            return producto;
 
         }
         else{
-            return ResponseEntity.notFound().build();
+            return new Producto();
         }
     }
 
 
     /** Permite actualizar el nombre de un producto */
-    public ResponseEntity<Producto> actualizarNombre(Long id, ActualizarNombreDTO nombredto) {
+    public Producto actualizarNombre(Long id, ActualizarNombreDTO nombredto) {
         Optional<Producto> productoOpt = inventarioRepo.findById(id);
         if (productoOpt.isPresent()){
             Producto producto = productoOpt.get();
             producto.setNombreProd(nombredto.getNombre());
             inventarioRepo.save(producto);
-            return ResponseEntity.ok(producto);
+            return producto;
 
         }
         else{
-            return ResponseEntity.notFound().build();
+            return new Producto();
         }
 
     }
 
     /** Actualiza el origen de un producto */
-    public ResponseEntity<Producto> actualizarOrigen(Long id, ActualizarOrigenDTO origendto) {
+    public Producto actualizarOrigen(Long id, ActualizarOrigenDTO origendto) {
         Optional<Producto> productoOpt = inventarioRepo.findById(id);
         if (productoOpt.isPresent()){
             Producto producto = productoOpt.get();
             producto.setOrigenProd(origendto.getOrigen());
             inventarioRepo.save(producto);
-            return ResponseEntity.ok(producto);
+            return producto;
 
         }
         else{
-            return ResponseEntity.notFound().build();
+            return new Producto();
         }
     
     }
@@ -106,73 +105,80 @@ public class InventarioService {
 
 
     /** Actualiza material principal de un producto */
-    public ResponseEntity<Producto> actualizarMaterial(Long id, ActualizarMaterialDTO materialdto) {
+    public Producto actualizarMaterial(Long id, ActualizarMaterialDTO materialdto) {
         Optional<Producto> productoOpt = inventarioRepo.findById(id);
         if (productoOpt.isPresent()){
             Producto producto = productoOpt.get();
             producto.setMaterialPrincipal(materialdto.getMaterialPrincipal());
             inventarioRepo.save(producto);
-            return ResponseEntity.ok(producto);
+            return producto;
 
         }
         else{
-            return ResponseEntity.notFound().build();
+            return new Producto();
         }
     }
 
 
     /** Actualiza la reutilizabilidad de un producto */
-    public ResponseEntity<Producto> actualizarReutilizabilidad(Long id, ActualizarReutilizacionDTO reutidto) {
+    public Producto actualizarReutilizabilidad(Long id, ActualizarReutilizacionDTO reutidto) {
         Optional<Producto> productoOpt = inventarioRepo.findById(id);
         if (productoOpt.isPresent()){
             Producto producto = productoOpt.get();
             producto.setReutilizable(reutidto.isReutilizacion());
             inventarioRepo.save(producto);
-            return ResponseEntity.ok(producto);
+            return producto;
 
         }
         else{
-            return ResponseEntity.notFound().build();
+            return new Producto();
         }
     }
 
 
 
     /** Actualiza la vida util de un producto */
-    public ResponseEntity<Producto> actualizarVidaUtill(Long id, ActualizadVidaDTO vidadto) {
+    public Producto actualizarVidaUtill(Long id, ActualizadVidaDTO vidadto) {
         Optional<Producto> productoOpt = inventarioRepo.findById(id);
         if (productoOpt.isPresent()){
             Producto producto = productoOpt.get();
             producto.setVidaUtilMeses(vidadto.getVidaUtil());
             inventarioRepo.save(producto);
-            return ResponseEntity.ok(producto);
+            return producto;
 
         }
         else{
-            return ResponseEntity.notFound().build();
+            return new Producto();
         }
     }
 
 
-    /** Actualiza la cantidad de un producto */
-    public ResponseEntity<Producto> actualizarCategoria(Long id, ActualizarCategoriaDTO categoriadto) {
+    /** Actualiza la categoria de un producto */
+    public Producto actualizarCategoria(Long id, ActualizarCategoriaDTO categoriadto) {
         Optional<Producto> productoOpt = inventarioRepo.findById(id);
         if (productoOpt.isPresent()){
             Producto producto = productoOpt.get();
             producto.setCategoria(categoriadto.getCategoria());
             inventarioRepo.save(producto);
-            return ResponseEntity.ok(producto);
+            return producto;
 
         }
         else{
-            return ResponseEntity.notFound().build();
+            return new Producto();
         }
     }
     
 
     public String eliminarProducto(Long id){
+        Optional<Producto> productoOpt = inventarioRepo.findById(id);
+        if (productoOpt.isPresent()){
+
         inventarioRepo.deleteById(id);
-        return "El producto con el id: " + id + "a sido eliminado";
+        return "El producto con el id: " + id + " a sido eliminado";
+
+        }else{
+            return "El producto que busca eliminar no existe";
+        }
     }
 
 }
