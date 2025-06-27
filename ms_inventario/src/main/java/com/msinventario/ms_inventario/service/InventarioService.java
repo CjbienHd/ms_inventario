@@ -32,6 +32,10 @@ public class InventarioService {
         return inventarioRepo.findAll();
     }
 
+    public Producto obtenerPorId(Long id){
+        return inventarioRepo.findById(id).orElse(null);
+    }
+
     /*Crea un Producto */
     public Producto creaProducto(Producto prod){
         return inventarioRepo.save(prod);

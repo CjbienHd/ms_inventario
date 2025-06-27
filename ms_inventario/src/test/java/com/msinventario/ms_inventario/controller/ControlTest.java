@@ -1,6 +1,7 @@
 package com.msinventario.ms_inventario.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.msinventario.ms_inventario.assembler.ProductoAssembler;
 import com.msinventario.ms_inventario.dto.*;
 import com.msinventario.ms_inventario.model.Producto;
 import com.msinventario.ms_inventario.service.InventarioService;
@@ -8,6 +9,7 @@ import com.msinventario.ms_inventario.service.InventarioService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,27 +32,50 @@ public class ControlTest{
 
     @MockitoBean
     private InventarioService inventarioService;
+      
+    @MockitoBean
+    private ProductoAssembler productoAssembler;
 
     @Autowired
     private ObjectMapper objectMapper;
 
     @Test
     void obtenerProductos_deberiaRetornar200() throws Exception {
-        when(inventarioService.obtenerTodos()).thenReturn(Collections.emptyList());
+        Producto p = new Producto();
+        p.setId(1L);
+        EntityModel<Producto> model = EntityModel.of(p);
 
-        mockMvc.perform(get("/inventario"))
+        when(inventarioService.obtenerTodos()).thenReturn(Collections.singletonList(p));
+        when(productoAssembler.toModel(p)).thenReturn(model);
+
+        mockMvc.perform(get("/inventario/obtener"))
                 .andExpect(status().isOk());
     }
 
+        @Test
+        void obtenerPorId_deberiaRetornar200() throws Exception {
+        Producto p = new Producto();
+        p.setId(1L);
+        when(inventarioService.obtenerPorId(1L)).thenReturn(p);
+        when(productoAssembler.toModel(p)).thenReturn(EntityModel.of(p));
+
+        mockMvc.perform(get("/inventario/producto/1"))
+                .andExpect(status().isOk());
+    }
+
+
     @Test
-    void crearProducto_deberiaRetornar200() throws Exception {
+    void crearProducto_deberiaRetornar201() throws Exception {
         Producto producto = new Producto();
-        when(inventarioService.creaProducto(any())).thenReturn(new Producto());
+        producto.setId(1L);
+
+        when(inventarioService.creaProducto(any())).thenReturn(producto);
+        when(productoAssembler.toModel(any())).thenReturn(EntityModel.of(producto));
 
         mockMvc.perform(post("/inventario/crearProducto")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(producto)))
-            .andExpect(status().isOk());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(producto)))
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -66,13 +91,17 @@ public class ControlTest{
 
     @Test
     void actualizarNombre_deberiaRetornar200() throws Exception {
+        Producto producto = new Producto();
+        producto.setId(1L);
         ActualizarNombreDTO dto = new ActualizarNombreDTO();
-        dto.setNombre("Nuevo nombre");
-        when(inventarioService.actualizarNombre(eq(1L), any())).thenReturn(new Producto());
+        dto.setNombre("Nuevo");
+
+        when(inventarioService.actualizarNombre(eq(1L), any())).thenReturn(producto);
+        when(productoAssembler.toModel(any())).thenReturn(EntityModel.of(producto));
 
         mockMvc.perform(put("/inventario/nombre/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
     }
 
@@ -117,8 +146,8 @@ public class ControlTest{
     }
 
     @Test
-    void eliminarProducto_deberiaRetornar200() throws Exception {
-        when(inventarioService.eliminarProducto(1L)).thenReturn("Producto eliminado");
+    void eliminarProducto_deberiaRetornar204() throws Exception {
+        doNothing().when(inventarioService).eliminarProducto(1L);
 
         mockMvc.perform(delete("/inventario/eliminar/1"))
                 .andExpect(status().isOk());
@@ -127,15 +156,17 @@ public class ControlTest{
 
     @Test
     void actualizarCantidad_deberiaRetornar200() throws Exception {
+        Producto producto = new Producto();
+        producto.setId(1L);
         ActualizarCantidadDTO dto = new ActualizarCantidadDTO();
-        dto.setCantidad(10);
+        dto.setCantidad(99);
 
-        Producto mockProducto = new Producto();
-        when(inventarioService.actualizarCantidad(eq(1L), any())).thenReturn(mockProducto);
+        when(inventarioService.actualizarCantidad(eq(1L), any())).thenReturn(producto);
+        when(productoAssembler.toModel(any())).thenReturn(EntityModel.of(producto));
 
         mockMvc.perform(put("/inventario/cantidad/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
     }
 

@@ -2,8 +2,14 @@ package com.msinventario.ms_inventario.controller;
 
 import lombok.RequiredArgsConstructor;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+
 import java.util.List;
 
+
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import com.msinventario.ms_inventario.service.InventarioService;
+import com.msinventario.ms_inventario.assembler.ProductoAssembler;
 import com.msinventario.ms_inventario.dto.ActualizadVidaDTO;
 import com.msinventario.ms_inventario.dto.ActualizarCantidadDTO;
 import com.msinventario.ms_inventario.dto.ActualizarCategoriaDTO;
@@ -25,137 +32,184 @@ import com.msinventario.ms_inventario.dto.ActualizarPrecioDTO;
 import com.msinventario.ms_inventario.dto.ActualizarReutilizacionDTO;
 import com.msinventario.ms_inventario.model.Producto;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 @RestControllerAdvice
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/inventario")
+@Tag(name = "Búsqueda de productos", description = "Operaciones para consultar productos")
 public class Control {
 
     private final InventarioService inventarioService;
 
+    private final ProductoAssembler assembler;
 
+
+    @Operation(
+            summary = "Consulta estado del servidor",
+            description = "Obtiene el estado del servicio si esta activo"
+    )
+    @ApiResponse(responseCode = "200", description = "Servicio activo")
     @GetMapping
     public String status() {
-        return "microservicio inventario funcionando correctamente";
+        return "microservicio busqueda de productos funcionando correctamente";
     }
 
+
+    @Operation(
+        summary = "Obtener todos los productos",
+        description = "Devuelve una lista con todos los productos registrados"
+    )
+    @ApiResponse(responseCode = "200", description = "Listado completo de productos")
     @GetMapping("/obtener")
-    public ResponseEntity<List<Producto>> obtenerProductos() {
-        return ResponseEntity.ok().body(inventarioService.obtenerTodos());
+    public CollectionModel<EntityModel<Producto>> obtenerProductos() {
+                List<EntityModel<Producto>> productos = inventarioService.obtenerTodos().stream()
+                .map(assembler::toModel)
+                .toList();
+
+        return CollectionModel.of(productos,
+                linkTo(methodOn(Control.class).obtenerProductos()).withSelfRel());
     }
-    
+
+    @GetMapping("/producto/{id}")
+    public ResponseEntity<EntityModel<Producto>> obtenerPorId(@PathVariable Long id) {
+        Producto producto = inventarioService.obtenerPorId(id);
+        return ResponseEntity.ok(assembler.toModel(producto));
+    }
 
 
     // Actualizar cantidad de un producto
     @PutMapping("cantidad/{id}")
-    public ResponseEntity<Producto> actualizarCantidad(@PathVariable Long id, @RequestBody ActualizarCantidadDTO dto) {
-        try{
-            if (dto.getCantidad() < 0) throw new IllegalArgumentException("Cantidad negativa");
-            return ResponseEntity.ok().body(inventarioService.actualizarCantidad(id, dto));
-        }catch(Exception e){
-            return ResponseEntity.badRequest().body(new Producto());
-        }
+    @Operation(summary = "Actualizar cantidad", description = "Actualiza la cantidad disponible del producto.")
+    @ApiResponse(responseCode = "200", description = "Cantidad actualizada correctamente")
+
+    public ResponseEntity<EntityModel<Producto>> actualizarCantidad(@Parameter(description = "ID del producto")@PathVariable Long id, @RequestBody ActualizarCantidadDTO dto) {
+        Producto actualizado = inventarioService.actualizarCantidad(id, dto);
+        return ResponseEntity.ok(assembler.toModel(actualizado));
     }
 
     // Actualizar precio de un producto
     @PutMapping("precio/{id}")
-    public ResponseEntity<Producto> actualizarPrecio(@PathVariable Long id, @RequestBody ActualizarPrecioDTO preciodto) {
-        try{
-            if (preciodto.getPrecio() < 0) throw new IllegalArgumentException("Cantidad negativa");
-            return ResponseEntity.ok().body(inventarioService.actualizarPrecio(id, preciodto));
-        }catch(Exception e){
-            return ResponseEntity.badRequest().body(new Producto());
-        }
-    
-    
+    @Operation(summary = "Actualizar precio", description = "Actualiza el precio del producto")
+    @ApiResponse(responseCode = "200", description = "Precio actualizado correctamente")
+
+    public ResponseEntity<EntityModel<Producto>> actualizarPrecio(@Parameter(description = "ID del producto")@PathVariable Long id, @RequestBody ActualizarPrecioDTO dto) {
+        Producto actualizado = inventarioService.actualizarPrecio(id, dto);
+        return ResponseEntity.ok(assembler.toModel(actualizado));
     }
 
         
     // Actualizar nombre de un producto
     @PutMapping("nombre/{id}")
-    public ResponseEntity<Producto> actualizarNombre(@PathVariable Long id, @RequestBody ActualizarNombreDTO nombredto) {
-        try{
-            return ResponseEntity.ok().body(inventarioService.actualizarNombre(id, nombredto));
-        }catch(Exception e){
-            return ResponseEntity.badRequest().body(new Producto());
-        }
+    @Operation(summary = "Actualizar nombre", description = "Actualiza el nombre del producto según su ID")
+    @ApiResponse(responseCode = "200", description = "Nombre actualizado correctamente")
+    
+    public ResponseEntity<EntityModel<Producto>> actualizarNombre(@Parameter(description = "ID del producto") @PathVariable Long id,@RequestBody ActualizarNombreDTO nombredto) {
+        Producto actualizado = inventarioService.actualizarNombre(id, nombredto);
+        return ResponseEntity.ok(assembler.toModel(actualizado));
     }
 
 
         
     // Actualizar origen de un producto
     @PutMapping("origen/{id}")
-    public ResponseEntity<Producto> actualizarOrigen(@PathVariable Long id, @RequestBody ActualizarOrigenDTO origendto) {
-        try{
-            return ResponseEntity.ok().body(inventarioService.actualizarOrigen(id, origendto));
-        }catch(Exception e){
-            return ResponseEntity.badRequest().body(new Producto());
-        }
+    @Operation(summary = "Actualizar origen", description = "Actualiza el origen del producto según su ID")
+    @ApiResponse(responseCode = "200", description = "Origen actualizado correctamente")
+
+    public ResponseEntity<EntityModel<Producto>> actualizarOrigen(@Parameter(description = "ID del producto")@PathVariable Long id, @RequestBody ActualizarOrigenDTO dto) {
+        Producto actualizado = inventarioService.actualizarOrigen(id, dto);
+        return ResponseEntity.ok(assembler.toModel(actualizado));
     }
 
         
     // Actualizar material principal de un producto
     @PutMapping("material/{id}")
-    public ResponseEntity<Producto> actualizarMaterial(@PathVariable Long id, @RequestBody ActualizarMaterialDTO materialdto) {
-        try{
-            return ResponseEntity.ok().body(inventarioService.actualizarMaterial(id, materialdto));
-        }catch(Exception e){
-            return ResponseEntity.badRequest().body(new Producto());
-        }
+    @Operation(summary = "Actualizar material", description = "Actualiza el material del producto")
+    @ApiResponse(responseCode = "200", description = "Material actualizado correctamente")
+
+    public ResponseEntity<EntityModel<Producto>> actualizarMaterial(@Parameter(description = "ID del producto")@PathVariable Long id, @RequestBody ActualizarMaterialDTO dto) {
+        Producto actualizado = inventarioService.actualizarMaterial(id, dto);
+        return ResponseEntity.ok(assembler.toModel(actualizado));
     }
 
 
         
     // Actualizar reutilizacion de un producto
     @PutMapping("reutilizacion/{id}")
-    public ResponseEntity<Producto> actualizarReutilizacion(@PathVariable Long id, @RequestBody ActualizarReutilizacionDTO reutidto) {
-        try{
-            return ResponseEntity.ok().body(inventarioService.actualizarReutilizabilidad(id, reutidto));
-        }catch(Exception e){
-            return ResponseEntity.badRequest().body(new Producto());
-        }
+    @Operation(summary = "Actualizar reutilización", description = "Actualiza si el producto es reutilizable.")
+    @ApiResponse(responseCode = "200", description = "Atributo reutilizable actualizado correctamente")
+
+    public ResponseEntity<EntityModel<Producto>> actualizarReutilizable(@Parameter(description = "ID del producto")@PathVariable Long id, @RequestBody ActualizarReutilizacionDTO dto) {
+        Producto actualizado = inventarioService.actualizarReutilizabilidad(id, dto);
+        return ResponseEntity.ok(assembler.toModel(actualizado));
     }
 
 
         
     // Actualizar vida util de un producto
     @PutMapping("vidautil/{id}")
-    public ResponseEntity<Producto> actualizarVidaUtil(@PathVariable Long id, @RequestBody ActualizadVidaDTO vidadto) {
-        try{
-        return ResponseEntity.ok().body(inventarioService.actualizarVidaUtill(id, vidadto));
-        }catch(Exception e){
-            return ResponseEntity.badRequest().body(new Producto());
-        }
+    @Operation(summary = "Actualizar vida útil", description = "Actualiza la vida útil del producto")
+    @ApiResponse(responseCode = "200", description = "Vida útil actualizada correctamente")
+
+    public ResponseEntity<EntityModel<Producto>> actualizarVida(@Parameter(description = "ID del producto")@PathVariable Long id, @RequestBody ActualizadVidaDTO dto) {
+        Producto actualizado = inventarioService.actualizarVidaUtill(id, dto);
+        return ResponseEntity.ok(assembler.toModel(actualizado));
     }
 
 
     // Actualizar categoria de un producto
     @PutMapping("categoria/{id}")
-    public ResponseEntity<Producto> actualizarCategoria(@PathVariable Long id, @RequestBody ActualizarCategoriaDTO categoriadto) {
-        try{
-        return ResponseEntity.ok().body(inventarioService.actualizarCategoria(id, categoriadto));
-        }catch(Exception e){
-            return ResponseEntity.badRequest().body(new Producto());
-        }
+    @Operation(summary = "Actualizar categoría", description = "Actualiza la categoría del producto.")
+    @ApiResponse(responseCode = "200", description = "Categoría actualizada correctamente")
+
+    public ResponseEntity<EntityModel<Producto>> actualizarCategoria(@Parameter(description = "ID del producto")@PathVariable Long id, @RequestBody ActualizarCategoriaDTO dto) {
+        Producto actualizado = inventarioService.actualizarCategoria(id, dto);
+        return ResponseEntity.ok(assembler.toModel(actualizado));
     }
 
 
     // Crear un nuevo producto
+
     @PostMapping("/crearProducto")
-    public ResponseEntity<Producto> crearProducto(@RequestBody Producto prod) {
-        try{
-        return ResponseEntity.ok().body(inventarioService.creaProducto(prod));
-        }catch(Exception e){
-            return ResponseEntity.badRequest().body(new Producto());
-        }
-    }
+    @Operation(summary = "Crea nuevo producto", description = "Permite registrar un nuevo producto en el sistema")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Producto creado correctamente"),
+        @ApiResponse(responseCode = "400", description = "Error al crear producto")
+
+    })
+    public ResponseEntity<EntityModel<Producto>> crearProducto(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Producto a crear",
+                required = true,
+                content = @Content(schema = @Schema(implementation = Producto.class))
+            )
+            @RequestBody Producto prod) {
+                Producto creado = inventarioService.creaProducto(prod);
+            return ResponseEntity
+                .created(linkTo(methodOn(Control.class).obtenerPorId(creado.getId())).toUri())
+                .body(assembler.toModel(creado));
+            }
 
     //Eliminar producto
     @DeleteMapping("/eliminar/{id}")
-    public String eliminarProducto(@PathVariable Long id){
-        return inventarioService.eliminarProducto(id);
+    @Operation(summary = "Elimina producto", description = "Elimina un producto segun su id del sistema")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Producto eliminado correctamente"),
+        @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+    })
+
+    public ResponseEntity<Void> eliminarProducto(
+            @Parameter(description = "ID del producto a eliminar", example = "1") @PathVariable Long id) {
+        inventarioService.eliminarProducto(id);
+        return ResponseEntity.ok().build();
     }
     
     
