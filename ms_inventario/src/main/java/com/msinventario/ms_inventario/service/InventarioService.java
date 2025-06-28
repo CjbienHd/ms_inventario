@@ -185,4 +185,21 @@ public class InventarioService {
         }
     }
 
+    public double verificarStockYObtenerPrecio(Long productoId, int cantidad) {
+        Producto producto = obtenerPorId(productoId);
+        if (producto == null || producto.getCantidad() < cantidad) {
+            throw new RuntimeException("Stock insuficiente o producto no encontrado.");
+    }
+        return producto.getPrecio();
+}
+
+    public void descontarStock(Long productoId, int cantidad) {
+        Producto producto = obtenerPorId(productoId);
+        if (producto == null || producto.getCantidad() < cantidad) {
+            throw new RuntimeException("No hay suficiente stock o producto no encontrado.");
+        }
+        producto.setCantidad(producto.getCantidad() - cantidad);
+        inventarioRepo.save(producto);
+}
+
 }

@@ -30,6 +30,8 @@ import com.msinventario.ms_inventario.dto.ActualizarNombreDTO;
 import com.msinventario.ms_inventario.dto.ActualizarOrigenDTO;
 import com.msinventario.ms_inventario.dto.ActualizarPrecioDTO;
 import com.msinventario.ms_inventario.dto.ActualizarReutilizacionDTO;
+import com.msinventario.ms_inventario.dto.DescontarStockRequest;
+import com.msinventario.ms_inventario.dto.VerificarStockRequest;
 import com.msinventario.ms_inventario.model.Producto;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -211,7 +213,21 @@ public class Control {
         inventarioService.eliminarProducto(id);
         return ResponseEntity.ok().build();
     }
+
+
+    @PostMapping("/verificar-stock")
+    public ResponseEntity<Double> verificarStock(@RequestBody VerificarStockRequest request) {
+        double precio = inventarioService.verificarStockYObtenerPrecio(request.getProductoId(), request.getCantidad());
+        return ResponseEntity.ok(precio);
+    }
+
+    @PutMapping("/descontar")
+    public ResponseEntity<Void> descontarStock(@RequestBody DescontarStockRequest request) {
+        inventarioService.descontarStock(request.getProductoId(), request.getCantidad());
+        return ResponseEntity.ok().build();
+    }
     
+
     
 }
 
